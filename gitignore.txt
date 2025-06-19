@@ -1,0 +1,24 @@
+# Virtual Environment
+venv/
+/venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Folder data lokal dan file database
+app_data/
+*.db
+*.sqlite3
+
+# Artefak PyInstaller (untuk versi desktop)
+build/
+dist/
+*.spec
+
+# Folder instance Flask
+instance/
+
+# File spesifik OS (opsional tapi bagus)
+.DS_Store
+Thumbs.db

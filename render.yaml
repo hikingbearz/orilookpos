@@ -1,0 +1,60 @@
+# ===================================================================
+# Blueprint (Cetak Biru) untuk mendeploy aplikasi POS Flask di Render.com
+# File ini mendefinisikan semua layanan dan konfigurasi yang diperlukan.
+# Cukup letakkan file ini di folder root proyek Anda di GitHub,
+# dan Render akan mengaturnya secara otomatis.
+# ===================================================================
+
+services:
+  # Definisi untuk Layanan Web (Aplikasi Flask Anda)
+  - type: web
+    # Nama layanan Anda. Akan menjadi bagian dari URL (misal: toko-pos-flask.onrender.com)
+    # Ganti dengan nama unik yang Anda inginkan.
+    name: ORILOOK-STORE
+    
+    # Lingkungan runtime yang digunakan.
+    env: python
+    
+    # Perintah untuk menginstall semua dependensi dari requirements.txt
+    # Render akan menjalankan ini setiap kali ada perubahan pada kode.
+    buildCommand: "pip install -r requirements.txt"
+    
+    # Perintah untuk menjalankan aplikasi Anda di server produksi.
+    # Menggunakan Gunicorn, server WSGI yang tangguh untuk Python.
+    # 'app:app' berarti: jalankan file 'app.py', cari variabel bernama 'app'.
+    # --bind 0.0.0.0:$PORT agar bisa menerima koneksi dari luar.
+    startCommand: "gunicorn 'app:app' --bind 0.0.0.0:$PORT"
+    
+    # Variabel lingkungan (Environment Variables)
+    envVars:
+      # Menentukan versi Python yang akan digunakan oleh Render.
+      # Sesuaikan dengan versi yang Anda gunakan saat development.
+      # Anda bisa cek dengan menjalankan 'python --version' di terminal Anda.
+      - key: PYTHON_VERSION
+        value: 3.11.5 # Contoh, ganti jika perlu.
+        
+      # Memberitahu Flask nama file aplikasi utama.
+      - key: FLASK_APP
+        value: app.py
+        
+      # (Opsional) Mengatur Flask ke mode produksi.
+      # Ini akan mematikan mode debug dan meningkatkan keamanan.
+      - key: FLASK_ENV
+        value: production
+
+    # ===============================================================
+    # BAGIAN PALING PENTING: PENYIMPANAN PERMANEN
+    # ===============================================================
+    # Tanpa ini, database dan file upload Anda akan hilang setiap kali
+    # server di-restart atau di-deploy ulang.
+    disks:
+      # Nama internal untuk disk. Bisa apa saja.
+      - name: appdata
+      
+        # Path di dalam server Render tempat disk akan 'dipasang'.
+        # Ini HARUS SAMA dengan path yang Anda periksa di fungsi get_data_path()
+        # di dalam app.py.
+        mountPath: /app/app_data
+        
+        # Ukuran disk dalam Gigabyte. 1GB adalah pilihan yang baik untuk memulai.
+        sizeGB: 1
