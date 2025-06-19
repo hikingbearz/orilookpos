@@ -21,16 +21,8 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
-        <h2 class="mb-0"><i class="bi bi-bar-chart-steps me-2"></i>{{ title }}</h2>
-        <div>
-            {% if report_data and report_data.has_data %}
-                <button id="downloadBtn" onclick="downloadReport('sales_by_product')" class="btn btn-success">
-                    <i class="bi bi-file-earmark-excel me-2"></i>Unduh Laporan Excel
-                </button>
-            {% endif %}
-        </div>
-    </div>
+    <!-- Judul halaman disederhanakan, tombol unduh telah dihapus -->
+    <h2 class="mb-4 no-print"><i class="bi bi-bar-chart-steps me-2"></i>{{ title }}</h2>
 
     <div class="card shadow-sm mb-4 no-print">
         <div class="card-header"><h5 class="mb-0"><i class="bi bi-funnel"></i> Filter Laporan</h5></div>
@@ -96,36 +88,5 @@
         window.onbeforeprint = beforePrint; window.onafterprint = afterPrint;
     })();
 </script>
-<script>
-    async function downloadReport(reportType) {
-        if (typeof window.pywebview === 'undefined' || typeof window.pywebview.api === 'undefined') {
-            alert('Kesalahan Integrasi: API aplikasi desktop tidak ditemukan. Fitur unduh hanya berfungsi di dalam aplikasi.');
-            return;
-        }
-        const button = document.getElementById('downloadBtn');
-        if (!button) return;
-        const originalText = button.innerHTML;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Memproses...';
-        button.disabled = true;
-        try {
-            const response = await fetch("{{ url_for('export_to_temp_file') }}", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-                body: JSON.stringify({ report_type: reportType, start_date: "{{ current_start_date_str }}", end_date: "{{ current_end_date_str }}" })
-            });
-            const result = await response.json();
-            if (result.success) {
-                window.pywebview.api.save_file_dialog(result.filepath);
-            } else {
-                alert('Gagal membuat laporan: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Terjadi kesalahan saat mencoba mengunduh laporan.');
-        } finally {
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }
-    }
-</script>
+<!-- Script untuk fungsi downloadReport() telah dihapus -->
 {% endblock %}
