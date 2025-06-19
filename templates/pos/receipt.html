@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Struk Transaksi - TRX-{{ transaction.id }}</title>
+    <!-- Bootstrap hanya untuk tombol, tidak penting untuk print -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            color: #000;
+            background-color: #f0f0f0; /* Latar belakang untuk area luar struk */
+        }
+        .receipt-container {
+            width: 302px; /* Lebar untuk simulasi di layar (80mm ~ 302px) */
+            margin: 20px auto;
+            padding: 15px;
+            background-color: #fff;
+            border: 1px dashed #ccc;
+        }
+        .store-info {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .store-info h5 {
+            margin: 0;
+            font-size: 14pt;
+            font-weight: bold;
+        }
+        .store-info p {
+            margin: 2px 0;
+            font-size: 10pt;
+        }
+
+        /* Tabel untuk detail dan total */
+        .details-table {
+            width: 100%;
+            font-size: 10pt;
+        }
+        .details-table td {
+            padding: 1px 0;
+        }
+        .details-table td:last-child {
+            text-align: right;
+        }
+
+        hr.dashed {
+            border: 0;
+            border-top: 1px dashed #000;
+            margin: 10px 0;
+        }
+
+        /* Tabel untuk daftar item */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+        }
+        .items-table thead th {
+            padding-bottom: 5px;
+            border-bottom: 1px solid #000;
+        }
+        .items-table tbody td {
+            padding: 5px 0;
+            vertical-align: top;
+        }
+        .items-table th.item, .items-table td.item { text-align: left; }
+        .items-table th.qty, .items-table td.qty { text-align: center; }
+        .items-table th.price, .items-table td.price { text-align: right; }
+        .items-table th.subtotal, .items-table td.subtotal { text-align: right; }
+
+        .totals-table {
+            width: 100%;
+            font-size: 10pt;
+        }
+        .totals-table td {
+            padding: 1px 0;
+        }
+        .totals-table td:last-child {
+            text-align: right;
+        }
+        .totals-table .total-label {
+            font-weight: bold;
+        }
+
+        .footer-message {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 10pt;
+        }
+        .actions {
+            text-align: center;
+            margin: 20px auto;
+            width: 302px;
+        }
+
+        /* CSS UNTUK PRINT */
+        @media print {
+            @page {
+                size: 80mm auto; /* Lebar kertas 80mm, tinggi otomatis */
+                margin: 3mm;
+            }
+            body {
+                background-color: #fff;
+                margin: 0;
+            }
+            .receipt-container {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                border: none;
+                box-shadow: none;
+            }
+            .actions {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-container">
+        <div class="store-info">
+            <h5>{{ store_name | upper }}</h5>
+            {% if store_address %}<p>{{ store_address }}</p>{% endif %}
+            {% if store_phone %}<p>Telp: {{ store_phone }}</p>{% endif %}
+        </div>
+
+        <hr class="dashed">
+
+        <table class="details-table">
+            <tr>
+                <td>No. Struk:</td>
+                <td>TRX-{{ transaction.id }}</td>
+            </tr>
+            <tr>
+                <td>Tanggal:</td>
+                <td>{{ transaction.timestamp | localdate }}</td>
+            </tr>
+            <tr>
+                <td>Waktu:</td>
+                <td>{{ transaction.timestamp | localtimeonly }}</td>
+            </tr>
+            <tr>
+                <td>Kasir:</td>
+                <td>{{ cashier_name | capitalize }}</td>
+            </tr>
+        </table>
+
+        <!-- Bagian daftar item tetap sama -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th class="item">Item</th>
+                    <th class="qty">Qty</th>
+                    <th class="price">Harga</th>
+                    <th class="subtotal">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in transaction.items %}
+                <tr>
+                    <td class="item">
+                        <!-- Tambahkan tanda (*) jika item kena pajak -->
+                        {{ item.product.name if item.product else 'Produk Dihapus' }}{% if item.is_taxed_at_transaction %} (*){% endif %}
+                        {% if item.discount_applied_info %}
+                            <br><small><em>(Disc. {{ item.discount_applied_info }})</em></small>
+                        {% endif %}
+                    </td>
+                    <td class="qty">{{ item.quantity }}</td>
+                    <td class="price">
+                        {{ "{:,.0f}".format(item.price_at_transaction).replace(",",".") }}
+                    </td>
+                    <td class="subtotal">{{ "{:,.0f}".format(item.subtotal).replace(",",".") }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <hr class="dashed">
+
+        <!-- ====================================================== -->
+        <!-- MULAI BAGIAN YANG DIMODIFIKASI -->
+        <!-- ====================================================== -->
+
+        <table class="totals-table">
+            <!-- Menampilkan total subtotal (gabungan kena pajak + bebas pajak) -->
+            <tr>
+                <td>Total Subtotal:</td>
+                <td>Rp {{ "{:,.0f}".format(transaction.total_subtotal).replace(",",".") }}</td>
+            </tr>
+
+            <!-- Tampilkan PPN hanya jika nilainya lebih dari nol -->
+            {% if transaction.tax_amount > 0 %}
+            <tr>
+                <!-- Menampilkan tarif PPN yang berlaku saat transaksi -->
+                <td>PPN ({{ "{:g}".format(transaction.tax_rate_at_transaction * 100) }}%):</td>
+                <td>Rp {{ "{:,.0f}".format(transaction.tax_amount).replace(",",".") }}</td>
+            </tr>
+            {% endif %}
+
+            <!-- Total Akhir -->
+            <tr>
+                <td class="total-label">Total Akhir:</td>
+                <td class="total-label">Rp {{ "{:,.0f}".format(transaction.total_amount).replace(",",".") }}</td>
+            </tr>
+        </table>
+
+        <!-- Tambahkan rincian pajak jika ada transaksi campuran -->
+        {% if transaction.taxable_subtotal > 0 and transaction.non_taxable_subtotal > 0 %}
+        <div style="font-size: 8pt; color: #555; margin-top: 10px;">
+            <p style="margin: 0;">(*) Item dikenakan PPN</p>
+            <p style="margin: 0;">Dasar Pengenaan Pajak: Rp {{ "{:,.0f}".format(transaction.taxable_subtotal).replace(",",".") }}</p>
+        </div>
+        {% endif %}
+
+        <!-- ====================================================== -->
+        <!-- AKHIR BAGIAN YANG DIMODIFIKASI -->
+        <!-- ====================================================== -->
+
+        <hr class="dashed">
+
+        <div class="footer-message">
+            <p>Terima kasih telah berbelanja!</p>
+            <p>Barang yang sudah dibeli tidak dapat<br>ditukar atau dikembalikan.</p>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button onclick="window.print();" class="btn btn-primary"><i class="bi bi-printer"></i> Cetak Struk</button>
+        <a href="{{ url_for('pos_interface') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Kembali</a>
+    </div>
+
+</body>
+</html>

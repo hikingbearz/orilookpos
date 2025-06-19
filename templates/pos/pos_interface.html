@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+<style>
+    /* Styling (tidak ada perubahan) */
+    .original-price-strikethrough { text-decoration: line-through; color: #6c757d; font-size: 0.8em; margin-right: 5px; }
+    .discount-badge { font-size: 0.70em; font-weight: bold; vertical-align: middle; }
+    .pos-product-card .card-body { padding: 0.65rem; }
+    .pos-product-card .card-title { font-size: 0.85rem; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+    .pos-product-card .card-text { font-size: 0.75rem; margin-bottom: 0.4rem; }
+    .pos-product-card .btn-xs { padding: 0.2rem 0.4rem; font-size: 0.75rem; }
+    #autocomplete-results .list-group-item { padding: 0.5rem 0.75rem; cursor: pointer; }
+    #autocomplete-results .list-group-item:hover { background-color: #e9ecef; }
+    #autocomplete-results .discount-badge-api { font-size: 0.7em; margin-left: 5px;}
+    .table-sm th, .table-sm td { padding: .4rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row gx-3">
+    <!-- Kolom Kiri: Pencarian dan Daftar Produk (tidak ada perubahan di sini) -->
+    <div class="col-lg-7">
+        <div class="p-3 bg-white rounded shadow-sm mb-3">
+            <h4 class="mb-1"><i class="bi bi-receipt-cutoff"></i> Kasir</h4>
+            <p class="text-muted small mb-3">Gunakan pencarian untuk menemukan produk dan menambahkannya ke keranjang.</p>
+            <div class="mb-3 position-relative">
+                <label for="product-search-input" class="form-label fw-bold">Cari & Tambah Produk:</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="product-search-input" class="form-control form-control-lg" placeholder="Ketik Nama atau Kode Produk..." value="{{ search_query or '' }}">
+                </div>
+                <div id="autocomplete-results" class="list-group position-absolute w-100 shadow-lg" style="z-index: 1000; display: none; max-height: 300px; overflow-y: auto; border-top: none;">
+                </div>
+            </div>
+        </div>
+
+        <div class="p-3 bg-white rounded shadow-sm">
+            <h5 class="mb-3"><i class="bi bi-star-fill text-warning"></i> Produk Terbaru</h5>
+            <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                <table class="table table-sm table-hover table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Nama Produk</th>
+                            <th scope="col" class="text-end">Harga</th>
+                            <th scope="col" class="text-center">Stok</th>
+                            <th scope="col" class="text-center" style="width: 80px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in summary_products %}
+                        {% set price_details = product.current_selling_price_details %}
+                        
+                        <!-- ============================================= -->
+                        <!--           BAGIAN YANG DIPERBAIKI              -->
+                        <!-- ============================================= -->
+                        
+                        {# 1. PERBAIKAN PADA <tr>: Hanya beri warna abu-abu jika itu barang dan stoknya habis #}
+                        <tr {% if product.product_type == 'goods' and product.stock <= 0 %}class="table-secondary text-muted"{% endif %}>
+                            <td>({{ product.product_code or 'JASA' }}) {{ product.name }}</td>
+                            <td class="text-end">
+                                {% if price_details.is_discount_active %}
+                                    <span class="original-price-strikethrough">Rp {{ "{:,.0f}".format(price_details.original_price).replace(",", ".") }}</span><br>
+                                    <span class="fw-semibold text-danger">Rp {{ "{:,.0f}".format(price_details.effective_price).replace(",", ".") }}</span>
+                                    <span class="badge bg-danger rounded-pill discount-badge ms-1">{{ price_details.active_discount_info }}</span>
+                                {% else %}
+                                    <span class="fw-semibold">Rp {{ "{:,.0f}".format(price_details.effective_price).replace(",", ".") }}</span>
+                                {% endif %}
+                            </td>
+                            
+                            {# 2. PERBAIKAN PADA KOLOM STOK: Tampilkan '-' untuk jasa #}
+                            <td class="text-center">
+                                {% if product.product_type == 'goods' %}
+                                    <span class="fw-bold {% if product.stock == 0 %}text-danger{% elif product.stock > 0 and product.stock < MINIMUM_STOCK_THRESHOLD %}text-warning{% else %}text-success{% endif %}">
+                                        {{ product.stock }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted fst-italic">-</span>
+                                {% endif %}
+                            </td>
+                            
+                            {# 3. PERBAIKAN PADA TOMBOL: Tombol 'disabled' hanya jika barang dan stok habis #}
+                            <td class="text-center">
+                                <button class="btn btn-xs btn-outline-primary w-100" 
+                                        onclick="addProductToCartViaFormSubmit({{ product.id }})" 
+                                        {% if product.product_type == 'goods' and product.stock <= 0 %}disabled title="Stok habis"{% else %}title="Tambah ke keranjang"{% endif %}>
+                                    <i class="bi bi-cart-plus"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- ============================================= -->
+                        <!--       AKHIR DARI BAGIAN YANG DIPERBAIKI         -->
+                        <!-- ============================================= -->
+
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4">
+                                <small class="text-muted fst-italic">Tidak ada produk untuk ditampilkan.</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kolom Kanan: Keranjang Belanja dan Pembayaran (tidak ada perubahan di sini, sudah benar) -->
+    <div class="col-lg-5">
+        <div class="p-3 bg-white rounded shadow-sm position-sticky" style="top: 70px;">
+            <h4 class="mb-3"><i class="bi bi-cart-check-fill text-primary"></i> Keranjang Belanja</h4>
+            
+            {% if cart %}
+            <!-- Daftar Item di Keranjang -->
+            <div style="max-height: calc(100vh - 480px); overflow-y: auto; margin-bottom: 1rem;">
+                <ul class="list-group list-group-flush">
+                    {% for product_id, item in cart.items() %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <h6 class="my-0">{{ item.name }}
+                                {% if item.discount_info %}
+                                    <span class="badge bg-danger rounded-pill discount-badge ms-1">{{ item.discount_info }}</span>
+                                {% endif %}
+                            </h6>
+                            <small class="text-muted">
+                                {% if item.discount_info and item.original_price != item.price %}
+                                    <span class="original-price-strikethrough">Rp {{ "{:,.0f}".format(item.original_price).replace(",", ".") }}</span>
+                                {% endif %}
+                                Rp {{ "{:,.0f}".format(item.price).replace(",", ".") }}
+                            </small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                             <small class="text-muted me-2">Qty:</small>
+                            <form method="POST" action="{{ url_for('update_cart', product_id=product_id) }}" class="d-inline-flex align-items-center me-2">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="number" name="quantity" value="{{ item.quantity }}" class="form-control form-control-sm" style="width: 60px;" min="0" onchange="this.form.submit()">
+                            </form>
+                            <form method="POST" action="{{ url_for('remove_from_cart', product_id=product_id) }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Hapus item"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Ringkasan Pembayaran -->
+            <div class="list-group-item px-0 py-2">
+                {% if cart_details.taxable_subtotal > 0 %}
+                <div class="d-flex justify-content-between">
+                    <span>Subtotal Kena Pajak</span>
+                    <span>Rp {{ "{:,.0f}".format(cart_details.taxable_subtotal).replace(",", ".") }}</span>
+                </div>
+                {% endif %}
+                {% if cart_details.non_taxable_subtotal > 0 %}
+                <div class="d-flex justify-content-between">
+                    <span>Subtotal Bebas Pajak</span>
+                    <span>Rp {{ "{:,.0f}".format(cart_details.non_taxable_subtotal).replace(",", ".") }}</span>
+                </div>
+                {% endif %}
+                {% if cart_details.tax_amount > 0 %}
+                <div class="d-flex justify-content-between text-muted">
+                    <span>PPN ({{ "{:g}".format(cart_details.tax_rate_percentage) }}%)</span>
+                    <span>Rp {{ "{:,.0f}".format(cart_details.tax_amount).replace(",", ".") }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="list-group-item d-flex justify-content-between bg-light py-3 px-0">
+                <span class="fw-bold fs-5">Total Akhir</span>
+                <strong class="fw-bold fs-5 text-primary">Rp {{ "{:,.0f}".format(cart_details.grand_total).replace(",", ".") }}</strong>
+            </div>
+
+            <hr class="my-3">
+            
+            <!-- Tombol Aksi -->
+            <form method="POST" action="{{ url_for('checkout') }}" class="d-grid gap-2 mb-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-success btn-lg" {% if not cart %}disabled{% endif %}><i class="bi bi-credit-card"></i> Checkout (Bayar)</button>
+            </form>
+            <form method="POST" action="{{ url_for('clear_cart') }}" class="d-grid gap-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                 <button type="submit" class="btn btn-outline-danger" {% if not cart %}disabled{% endif %}><i class="bi bi-cart-x"></i> Kosongkan Keranjang</button>
+            </form>
+            
+            {% else %}
+            <!-- Tampilan jika keranjang kosong -->
+            <div class="alert alert-secondary text-center mt-3" role="alert">
+                <i class="bi bi-cart2 fs-1"></i><br>
+                Keranjang belanja Anda kosong.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+// JavaScript (tidak ada perubahan)
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('product-search-input');
+    const resultsContainer = document.getElementById('autocomplete-results');
+    let debounceTimer;
+
+    if (searchInput && resultsContainer) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+            resultsContainer.innerHTML = ''; 
+            resultsContainer.style.display = 'none';
+
+            if (query.length < 1) { return; }
+
+            debounceTimer = setTimeout(() => {
+                fetch(`/api/search_products?q=${encodeURIComponent(query)}`)
+                    .then(response => {
+                        if (!response.ok) { throw new Error('Network response was not ok: ' + response.statusText); }
+                        return response.json();
+                    })
+                    .then(data => {
+                        resultsContainer.style.display = 'block';
+                        if (data.length > 0) {
+                            data.forEach(product => {
+                                const item = document.createElement('a');
+                                item.classList.add('list-group-item', 'list-group-item-action', 'd-flex', 'justify-content-between', 'align-items-center');
+                                
+                                let priceDisplay = `Rp ${product.price.toLocaleString()}`;
+                                if (product.discount_info) {
+                                    priceDisplay = `<span class="original-price-strikethrough" style="font-size:0.9em;">Rp ${product.original_price.toLocaleString()}</span> <span class="text-danger fw-bold">Rp ${product.price.toLocaleString()}</span> <span class="badge bg-danger rounded-pill discount-badge-api">${product.discount_info}</span>`;
+                                }
+                                
+                                const textSpan = document.createElement('span');
+                                textSpan.innerHTML = `${product.name} - ${priceDisplay}`;
+                                
+                                const stockSpan = document.createElement('small');
+                                stockSpan.classList.add('text-muted');
+                                stockSpan.textContent = `Stok: ${product.stock}`;
+                                
+                                item.appendChild(textSpan);
+                                item.appendChild(stockSpan);
+
+                                item.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    // PERBAIKAN DI JAVASCRIPT: Cek jika stok bukan N/A (untuk jasa) atau > 0 (untuk barang)
+                                    if (product.stock === 'N/A' || product.stock > 0) {
+                                        addProductToCartViaFormSubmit(product.id);
+                                    } else {
+                                        alert('Stok produk ini habis!');
+                                    }
+                                    searchInput.value = '';
+                                    resultsContainer.innerHTML = '';
+                                    resultsContainer.style.display = 'none';
+                                });
+                                resultsContainer.appendChild(item);
+                            });
+                        } else {
+                            const noResultItem = document.createElement('div');
+                            noResultItem.classList.add('list-group-item', 'text-muted', 'text-center');
+                            noResultItem.textContent = 'Tidak ada produk ditemukan.';
+                            resultsContainer.appendChild(noResultItem);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching products:', error);
+                        resultsContainer.innerHTML = '<div class="list-group-item text-danger text-center">Gagal memuat produk.</div>';
+                    });
+            }, 350);
+        });
+
+        document.addEventListener('click', function(event) {
+            if (searchInput && resultsContainer && !searchInput.contains(event.target) && !resultsContainer.contains(event.target)) {
+                resultsContainer.style.display = 'none';
+            }
+        });
+    }
+});
+
+function addProductToCartViaFormSubmit(productId) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/pos/add_to_cart/${productId}`;
+    
+    const csrfInputHidden = document.createElement('input');
+    csrfInputHidden.type = 'hidden';
+    csrfInputHidden.name = 'csrf_token';
+    csrfInputHidden.value = '{{ csrf_token() }}';
+    form.appendChild(csrfInputHidden);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+{% endblock %}
