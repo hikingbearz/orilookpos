@@ -20,9 +20,6 @@ import re
 import shutil
 import zipfile 
 import pytz
-# --- PERUBAHAN UNTUK EKSPOR EXCEL ---
-import pandas as pd
-import io
 # --- AKHIR PERUBAHAN ---
 from babel.dates import format_datetime, format_date, format_time
 import click
@@ -1277,89 +1274,6 @@ def sales_by_product_report():
     default_end_date = end_date_str or today_local.strftime('%Y-%m-%d')
 
     return render_template('admin/reports/sales_by_product_report.html', title='Laporan Penjualan per Produk', report_data=report_data, current_start_date_str=default_start_date, current_end_date_str=default_end_date)
-
-# --- MULAI FUNGSI BARU ---
-@app.route('/admin/reports/export_excel', methods=['POST'])
-@login_required
-@role_required(['admin', 'manager', 'sales'])
-def export_excel():
-    try:
-        start_date_str = request.form.get('start_date')
-        end_date_str = request.form.get('end_date')
-        report_type = request.form.get('report_type')
-
-        if not all([start_date_str, end_date_str, report_type]):
-            flash("Parameter untuk ekspor tidak lengkap.", "danger")
-            return redirect(request.referrer or url_for('dashboard'))
-
-        start_date_obj = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        end_date_obj = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-
-        df = None
-        sheet_name = 'Laporan'
-        
-        if report_type == 'sales_by_date':
-            report_data = get_sales_by_date_range_data(start_date_obj, end_date_obj)
-            if not report_data['has_data']:
-                flash('Tidak ada data penjualan untuk diekspor pada rentang tanggal ini.', 'info')
-                return redirect(request.referrer)
-            
-            processed_data = []
-            for transaction, cashier_name in report_data['transactions_with_cashier']:
-                local_timestamp = transaction.timestamp.astimezone(TARGET_TIMEZONE)
-                processed_data.append({
-                    'ID Transaksi': transaction.id, 'Tanggal': local_timestamp.strftime('%d-%m-%Y'),
-                    'Waktu': local_timestamp.strftime('%H:%M:%S'), 'Kasir': cashier_name,
-                    'Subtotal (Non-PPN)': transaction.non_taxable_subtotal, 'Subtotal (Kena PPN)': transaction.taxable_subtotal,
-                    'Total Subtotal': transaction.total_subtotal, 'Jumlah PPN': transaction.tax_amount,
-                    'Grand Total': transaction.total_amount
-                })
-            df = pd.DataFrame(processed_data)
-            sheet_name = 'Laporan_Penjualan'
-
-        elif report_type == 'sales_by_product':
-            report_data = get_sales_by_product_data(start_date_obj, end_date_obj)
-            if not report_data['has_data']:
-                flash('Tidak ada data penjualan per produk untuk diekspor pada rentang tanggal ini.', 'info')
-                return redirect(request.referrer)
-
-            df = pd.DataFrame(report_data['products_sales'])
-            df.rename(columns={
-                'product_name': 'Nama Produk', 'total_quantity_sold': 'Total Kuantitas Terjual', 'total_revenue': 'Total Pendapatan (Rp)'
-            }, inplace=True)
-            sheet_name = 'Laporan_Per_Produk'
-        
-        else:
-            flash('Tipe laporan tidak dikenal.', 'danger')
-            return redirect(request.referrer)
-        
-        # Buat file Excel di memori
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name=sheet_name)
-            # Auto-adjust column width (opsional tapi bagus)
-            for column in df:
-                column_length = max(df[column].astype(str).map(len).max(), len(column))
-                col_idx = df.columns.get_loc(column)
-                writer.sheets[sheet_name].column_dimensions[chr(65 + col_idx)].width = column_length + 2
-
-        output.seek(0)
-        
-        timestamp = datetime.now().strftime('%Y%m%d')
-        filename = f"{sheet_name}_{timestamp}.xlsx"
-        
-        return send_file(
-            output,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            as_attachment=True,
-            download_name=filename
-        )
-
-    except Exception as e:
-        app.logger.error(f"Excel export failed: {e}")
-        flash(f'Gagal membuat file Excel: {e}', 'danger')
-        return redirect(request.referrer or url_for('dashboard'))
-# --- AKHIR FUNGSI BARU ---
 
 
 @app.route('/admin/suppliers')
