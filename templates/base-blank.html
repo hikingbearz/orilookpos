@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ title | default('Login') }} - {{ app_settings.store_name | default('POS App') }}</title>
+
+    <!-- =================================================================== -->
+    <!--          PERUBAHAN: MEMUAT ASET DARI FOLDER LOKAL 'static'          -->
+    <!-- =================================================================== -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}">
+    <!-- =================================================================== -->
+
+    <style>
+        body {
+            /* Cek apakah ada background kustom dari settings, jika tidak gunakan default */
+            {% set login_bg = get_setting_value('login_background_image') %}
+            background-image: url("{{ url_for('serve_branding_file', filename=login_bg) if login_bg else url_for('static', filename='img/login-bg.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.45);
+            z-index: -1;
+        }
+    </style>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-6 col-lg-5">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- =================================================================== -->
+    <!--            PERUBAHAN: MEMUAT SCRIPT DARI FOLDER LOKAL             -->
+    <!-- =================================================================== -->
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    {% block scripts_extra %}{% endblock %}
+</body>
+</html>

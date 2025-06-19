@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-truck"></i> {{ legend }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }} {# CSRF Protection #}
+                        <fieldset>
+                            <div class="mb-3">
+                                {{ form.name.label(class="form-label fw-bold") }}
+                                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Nama Perusahaan Supplier") }}
+                                {% if form.name.errors %}<div class="invalid-feedback">{% for e in form.name.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.contact_person.label(class="form-label fw-bold") }}
+                                {{ form.contact_person(class="form-control" + (" is-invalid" if form.contact_person.errors else ""), placeholder="Nama orang yang bisa dihubungi") }}
+                                {% if form.contact_person.errors %}<div class="invalid-feedback">{% for e in form.contact_person.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.phone.label(class="form-label fw-bold") }}
+                                    {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""), placeholder="0812...") }}
+                                    {% if form.phone.errors %}<div class="invalid-feedback">{% for e in form.phone.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.email.label(class="form-label fw-bold") }}
+                                    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="email@supplier.com") }}
+                                    {% if form.email.errors %}<div class="invalid-feedback">{% for e in form.email.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                {{ form.address.label(class="form-label fw-bold") }}
+                                {{ form.address(class="form-control" + (" is-invalid" if form.address.errors else ""), rows="3", placeholder="Alamat lengkap supplier") }}
+                                {% if form.address.errors %}<div class="invalid-feedback">{% for e in form.address.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.notes.label(class="form-label fw-bold") }}
+                                {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), rows="2", placeholder="Informasi tambahan, misal: spesialisasi produk, syarat pembayaran, dll.") }}
+                                {% if form.notes.errors %}<div class="invalid-feedback">{% for e in form.notes.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                            </div>
+                        </fieldset>
+                        <div class="d-grid mt-4">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <a href="{{ url_for('manage_suppliers') }}" class="btn btn-link">Kembali ke Kelola Supplier</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

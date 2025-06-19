@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ title }} - {{ app_settings.store_name }}</title>
+    
+    <!-- ======================================================= -->
+    <!--     PERBAIKAN: MENGGUNAKAN BOOTSTRAP 5 & IKON LOKAL     -->
+    <!-- ======================================================= -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}">
+    
+    <style>
+        body {
+            /* Fallback background color */
+            background-color: #f8f9fa; 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Style untuk background image dari database */
+        {% set bg_image = get_setting_value('login_background_image') %}
+        {% if bg_image %}
+        body {
+            background-image: url('{{ url_for("serve_branding_file", filename=bg_image) }}');
+        }
+        {% endif %}
+
+        .login-container {
+            max-width: 400px;
+            width: 100%;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.9); 
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .store-logo {
+            max-height: 80px;
+            margin-bottom: 1.5rem;
+        }
+        .btn-login {
+            /* Warna tombol login disesuaikan dengan Bootstrap 5 */
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            font-weight: bold;
+            color: #fff; 
+        }
+        .btn-login:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="text-center">
+            {% set logo_filename = get_setting_value('store_logo') %}
+            {% if logo_filename %}
+                <img src="{{ url_for('serve_branding_file', filename=logo_filename) }}" alt="Logo Toko" class="store-logo">
+            {% else %}
+                <h2 class="mb-4">{{ app_settings.store_name }}</h2>
+            {% endif %}
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="mb-3"> {# Menggunakan margin bottom dari Bootstrap 5 #}
+                {{ form.username.label(class="form-label") }}
+                {% if form.username.errors %}
+                    {{ form.username(class="form-control is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.username.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.username(class="form-control", placeholder="Masukkan username") }}
+                {% endif %}
+            </div>
+            <div class="mb-3"> {# Menggunakan margin bottom dari Bootstrap 5 #}
+                {{ form.password.label(class="form-label") }}
+                {% if form.password.errors %}
+                    {{ form.password(class="form-control is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.password.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.password(class="form-control", placeholder="Masukkan password") }}
+                {% endif %}
+            </div>
+            <div class="d-grid"> {# Menggunakan d-grid untuk tombol block di Bootstrap 5 #}
+                {{ form.submit(class="btn btn-login btn-block") }}
+            </div>
+        </form>
+
+        <div class="border-top pt-3 mt-3 text-center">
+            <button type="button" class="btn btn-danger w-100" onclick="exitApp()">
+                 <i class="bi bi-x-circle me-1"></i> Keluar dari Aplikasi
+            </button>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!--            PERBAIKAN: MENGGUNAKAN SCRIPT LOKAL          -->
+    <!-- ======================================================= -->
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+    <!-- Script untuk memanggil fungsi Python dari WebView -->
+    <script>
+        function exitApp() {
+            if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.quit_app === 'function') {
+                window.pywebview.api.quit_app();
+            } else {
+                console.error("Pywebview API 'quit_app' not found. Cannot exit application.");
+                alert("Fungsi keluar hanya bekerja pada aplikasi desktop.");
+            }
+        }
+    </script>
+</body>
+</html>

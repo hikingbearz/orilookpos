@@ -1,0 +1,40 @@
+{# Menggunakan kerangka base_auth.html (tanpa navbar) bukan base.html #}
+{% extends "base_auth.html" %}
+
+{% block title %}Selamat Datang - {{ get_setting_value('store_name', 'POS App') }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            
+            <!-- Kotak transparan yang akan berada persis di tengah halaman -->
+            <div class="card shadow-lg" style="background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+                <div class="card-body p-5 text-center">
+
+                    {% set logo_file = get_setting_value('store_logo') %}
+                    {% if logo_file %}
+                        <img src="{{ url_for('serve_branding_file', filename=logo_file) }}" alt="Logo Toko" class="mb-4" style="max-height: 90px;">
+                    {% else %}
+                        <i class="bi bi-shop-window display-2 text-primary mb-3"></i>
+                    {% endif %}
+                    
+                    <h1 class="display-5 fw-bold">Selamat Datang di {{ app_settings.store_name | default('Aplikasi POS') }}</h1>
+                    
+                    <p class="fs-4 col-lg-10 mx-auto text-muted">
+                        Aplikasi Point of Sale Anda siap digunakan. Klik tombol di bawah untuk memulai.
+                    </p>
+                    
+                    <hr class="my-4">
+                    
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4 fw-bold">
+                        Masuk ke Dashboard
+                    </a>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
