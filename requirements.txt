@@ -5,8 +5,6 @@ Flask-WTF
 Werkzeug
 SQLAlchemy
 gunicorn
-pandas
-openpyxl
 pytz
 Babel
 click
