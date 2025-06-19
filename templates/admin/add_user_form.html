@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white"> {# Warna header bisa disesuaikan #}
+                    <h4 class="mb-0"><i class="bi bi-person-plus-fill"></i> {{ legend }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }} {# CSRF Protection dari FlaskForm #}
+                        <fieldset>
+                            <div class="mb-3">
+                                {{ form.username.label(class="form-label fw-bold") }}
+                                {{ form.username(class="form-control form-control-lg" + (" is-invalid" if form.username.errors else ""), placeholder="Username untuk staf baru") }}
+                                {% if form.username.errors %}<div class="invalid-feedback">{% for e in form.username.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.password.label(class="form-label fw-bold") }} {# Label akan "Password Awal" dari form Python #}
+                                {{ form.password(class="form-control form-control-lg" + (" is-invalid" if form.password.errors else ""), placeholder="Password awal untuk staf") }}
+                                {% if form.password.errors %}<div class="invalid-feedback">{% for e in form.password.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                            </div>
+                            
+                            {# Jika Anda memutuskan untuk menambahkan konfirmasi password di AdminAddUserForm, uncomment ini:
+                            <div class="mb-3">
+                                {{ form.confirm_password.label(class="form-label fw-bold") }}
+                                {{ form.confirm_password(class="form-control form-control-lg" + (" is-invalid" if form.confirm_password.errors else ""), placeholder="Konfirmasi password awal") }}
+                                {% if form.confirm_password.errors %}<div class="invalid-feedback">{% for e in form.confirm_password.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                            </div>
+                            #}
+
+                            <div class="mb-3">
+                                {{ form.role.label(class="form-label fw-bold") }}
+                                {{ form.role(class="form-select form-select-lg" + (" is-invalid" if form.role.errors else "")) }}
+                                {% if form.role.errors %}<div class="invalid-feedback">{% for e in form.role.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                            </div>
+                        </fieldset>
+                        <div class="d-grid mt-4">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+             <div class="text-center mt-3">
+                <a href="{{ url_for('manage_users') }}" class="btn btn-link">Kembali ke Kelola Pengguna</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

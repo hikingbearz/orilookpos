@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-tags-fill"></i> {{ title }}</h2>
+        {% if current_user.role in ['admin', 'inventory', 'manager'] %}
+        <a href="{{ url_for('add_category') }}" class="btn btn-success"><i class="bi bi-plus-circle-fill"></i> Tambah Kategori Baru</a>
+        {% endif %}
+    </div>
+
+    {% if categories %}
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-bordered mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col" style="width:5%">ID</th>
+                            <th scope="col">Nama Kategori</th>
+                            <th scope="col">Deskripsi</th>
+                            <th scope="col" class="text-center">Jumlah Produk</th>
+                            <th scope="col" style="width: 15%;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category_item in categories %}
+                        <tr>
+                            <td>{{ category_item.id }}</td>
+                            <td>{{ category_item.name }}</td>
+                            <td>{{ (category_item.description[:70] + '...' if category_item.description and category_item.description|length > 70 else category_item.description) or '-' }}</td>
+                            <td class="text-center">{{ category_item.products.count() }}</td> {# Menghitung produk dalam kategori #}
+                            <td>
+                                <a href="{{ url_for('edit_category', category_id=category_item.id) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </a>
+                                {% if current_user.role == 'admin' %}
+                                <form method="POST" action="{{ url_for('delete_category', category_id=category_item.id) }}" style="display:inline;" onsubmit="return confirm('Anda yakin ingin menghapus kategori \'{{ category_item.name }}\' ini?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                        <i class="bi bi-trash-fill"></i> Hapus
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center" role="alert">
+        <i class="bi bi-info-circle-fill"></i> Belum ada kategori produk yang ditambahkan. 
+        {% if current_user.role in ['admin', 'inventory', 'manager'] %}
+        <a href="{{ url_for('add_category') }}" class="alert-link">Tambah sekarang?</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-tag-fill"></i> {{ legend }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }} {# CSRF Protection #}
+                        <fieldset>
+                            <div class="mb-3">
+                                {{ form.name.label(class="form-label fw-bold") }}
+                                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Nama Kategori") }}
+                                {% if form.name.errors %}<div class="invalid-feedback">{% for e in form.name.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.description.label(class="form-label fw-bold") }}
+                                {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3", placeholder="Deskripsi singkat tentang kategori...") }}
+                                {% if form.description.errors %}<div class="invalid-feedback">{% for e in form.description.errors %}<span>{{e}}</span>{% endfor %}</div>{% endif %}
+                            </div>
+                        </fieldset>
+                        <div class="d-grid mt-4">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+             <div class="text-center mt-3">
+                <a href="{{ url_for('manage_categories') }}" class="btn btn-link">Kembali ke Kelola Kategori</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

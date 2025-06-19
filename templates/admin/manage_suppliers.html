@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-truck"></i> {{ title }}</h2>
+        {% if current_user.role in ['admin', 'inventory', 'manager'] %}
+        <a href="{{ url_for('add_supplier') }}" class="btn btn-success"><i class="bi bi-person-plus-fill"></i> Tambah Supplier Baru</a>
+        {% endif %}
+    </div>
+
+    {% if suppliers %}
+    <div class="card shadow-sm">
+        <div class="card-body p-0"> {# p-0 agar tabel mepet ke card #}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-bordered mb-0"> {# mb-0 agar tidak ada margin bawah tabel #}
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col" style="width:5%">ID</th>
+                            <th scope="col">Nama Supplier</th>
+                            <th scope="col">Kontak Person</th>
+                            <th scope="col">Telepon</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Alamat</th>
+                            <th scope="col" style="width: 12%;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for supplier_item in suppliers %}
+                        <tr>
+                            <td>{{ supplier_item.id }}</td>
+                            <td>{{ supplier_item.name }}</td>
+                            <td>{{ supplier_item.contact_person or '-' }}</td>
+                            <td>{{ supplier_item.phone or '-' }}</td>
+                            <td>{{ supplier_item.email or '-' }}</td>
+                            <td>{{ (supplier_item.address[:40] + '...' if supplier_item.address and supplier_item.address|length > 40 else supplier_item.address) or '-' }}</td>
+                            <td>
+                                <a href="{{ url_for('edit_supplier', supplier_id=supplier_item.id) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                {% if current_user.role == 'admin' %}
+                                <form method="POST" action="{{ url_for('delete_supplier', supplier_id=supplier_item.id) }}" style="display:inline;" onsubmit="return confirm('Anda yakin ingin menghapus supplier \'{{ supplier_item.name }}\' ini? Data pembelian terkait mungkin akan terpengaruh.');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center" role="alert">
+        <i class="bi bi-info-circle-fill"></i> Belum ada supplier yang ditambahkan. 
+        {% if current_user.role in ['admin', 'inventory', 'manager'] %}
+        <a href="{{ url_for('add_supplier') }}" class="alert-link">Tambah sekarang?</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
