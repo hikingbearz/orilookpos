@@ -1,0 +1,94 @@
+/* =================================================================== */
+/*             KODE CSS LENGKAP UNTUK style.css                        */
+/* =================================================================== */
+
+html {
+    height: 100%;
+}
+
+body {
+    /* Perbaikan untuk Navbar yang terpotong */
+    padding-top: 72px; 
+    
+    background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+main {
+    /* Perbaikan agar footer menempel di bawah */
+    flex: 1 0 auto;
+}
+
+.footer {
+    flex-shrink: 0;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.075);
+}
+
+main.container-fluid > .alert:first-child,
+main.container > .alert:first-child {
+    margin-top: 1rem;
+}
+
+.pos-product-card .card-body { 
+    padding: 0.65rem; 
+}
+.pos-product-card .card-title { 
+    font-size: 0.85rem; 
+    margin-bottom: 0.2rem; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis;
+}
+.pos-product-card .card-text { 
+    font-size: 0.75rem; 
+    margin-bottom: 0.4rem; 
+}
+.pos-product-card .btn-xs { 
+    padding: 0.2rem 0.4rem; 
+    font-size: 0.75rem; 
+}
+
+#autocomplete-results .list-group-item { 
+    padding: 0.5rem 0.75rem; 
+    cursor: pointer; 
+}
+#autocomplete-results .list-group-item:hover { 
+    background-color: #e9ecef; 
+}
+#autocomplete-results .discount-badge-api { 
+    font-size: 0.7em; 
+    margin-left: 5px;
+}
+
+.report-summary-card { 
+    border-left: 5px solid; 
+}
+.report-summary-card.border-success { 
+    border-left-color: var(--bs-success) !important; 
+}
+.report-summary-card.border-info   { 
+    border-left-color: var(--bs-info) !important; 
+}
+
+.original-price-strikethrough { 
+    text-decoration: line-through; 
+    color: #6c757d; 
+    font-size: 0.8em; 
+    margin-right: 5px; 
+}
+.discount-badge { 
+    font-size: 0.70em; 
+    font-weight: bold; 
+    vertical-align: middle; 
+}
+.btn-xs { 
+    padding: .2rem .4rem; 
+    font-size: .75rem; 
+    line-height: 1.5; 
+    border-radius: .2rem; 
+}
