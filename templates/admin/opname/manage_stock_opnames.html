@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>{{ title }}</h2>
+        <form action="{{ url_for('start_stock_opname') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>Mulai Sesi Opname Baru</button>
+        </form>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>No. Opname</th>
+                            <th>Tanggal Mulai</th>
+                            <th>Status</th>
+                            <th>Dibuat Oleh</th>
+                            <th>Tanggal Selesai</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for opname in opnames_pagination.items %}
+                        <tr>
+                            <td>{{ opname.opname_number }}</td>
+                            <td>{{ opname.start_date | localtime }}</td>
+                            <td>
+                                {% if opname.status == 'In Progress' %}
+                                    <span class="badge bg-warning text-dark">{{ opname.status }}</span>
+                                {% else %}
+                                    <span class="badge bg-success">{{ opname.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ opname.creator.username if opname.creator else 'N/A' }}</td>
+                            <td>{{ opname.end_date | localtime if opname.end_date else '-' }}</td>
+                            <td>
+                                {% if opname.status == 'In Progress' %}
+                                    <a href="{{ url_for('conduct_stock_opname', opname_id=opname.id) }}" class="btn btn-sm btn-info">Lanjutkan</a>
+                                {% else %}
+                                    <a href="#" class="btn btn-sm btn-secondary disabled">Lihat Hasil</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">Belum ada riwayat stock opname.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <!-- Pagination -->
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4"><i class="bi bi-card-checklist me-2"></i>{{ title }}</h2>
+
+    <div class="alert alert-info">
+        <h5 class="alert-heading">Petunjuk Pengisian:</h5>
+        <ul class="mb-0">
+            <li>Isi kolom <strong>"Hitungan Fisik"</strong> dengan jumlah stok yang Anda hitung di gudang.</li>
+            <li>Kolom <strong>"Selisih"</strong> akan ter-update otomatis.</li>
+            <li>Gunakan tombol <strong>"Simpan Progres"</strong> untuk menyimpan tanpa menyelesaikan.</li>
+            <li>Gunakan tombol <strong>"Finalisasi"</strong> HANYA jika semua produk sudah selesai dihitung. Tindakan ini akan menyesuaikan stok sistem dan tidak bisa diurungkan.</li>
+        </ul>
+    </div>
+
+    <!-- HANYA ADA SATU FORM DI SINI -->
+    <form method="POST" id="stock-opname-form">
+        {{ form.hidden_tag() }}
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40%;">Produk</th>
+                                <th class="text-center">Stok Sistem</th>
+                                <th class="text-center" style="width: 15%;">Hitungan Fisik</th>
+                                <th class="text-center">Selisih (Varian)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item_form in form.items %}
+                                {{ item_form.item_id }} {# Hidden input untuk ID #}
+                                <tr>
+                                    <td class="align-middle">{{ item_form.product_name.data }}</td>
+                                    <td class="text-center align-middle" data-system-stock="{{ item_form.system_stock.data }}">
+                                        {{ item_form.system_stock.data }}
+                                    </td>
+                                    <td>
+                                        <!-- Perbaikan: Tambahkan class agar mudah dipilih oleh JS -->
+                                        {{ item_form.physical_count(class="form-control physical-count-input", autocomplete="off") }}
+                                    </td>
+                                    <td class="text-center align-middle variance-cell fw-bold">
+                                        {# Akan diisi oleh JavaScript #}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <!-- Tombol Simpan Progres (Submit Biasa) -->
+                {{ form.submit_progress(class="btn btn-secondary") }}
+                
+                <!-- Tombol ini HANYA untuk membuka modal -->
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#finalizeModal">
+                    Finalisasi
+                </button>
+                
+                <!-- Tombol Finalisasi yang sebenarnya, disembunyikan. Akan dipicu oleh JS -->
+                <div style="display: none;">
+                    {{ form.submit_finalize(id="submit-finalize-hidden") }}
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Modal Konfirmasi Finalisasi -->
+<div class="modal fade" id="finalizeModal" tabindex="-1" aria-labelledby="finalizeModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="finalizeModalLabel">Konfirmasi Finalisasi Stock Opname</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Apakah Anda yakin ingin memfinalisasi sesi opname ini?</p>
+        <p class="text-danger fw-bold">PERHATIAN: Tindakan ini akan mengubah stok produk di sistem secara permanen sesuai dengan hasil hitungan fisik dan tidak dapat diurungkan.</p>
+      </div>
+      <div class="modal-footer">
+        <!-- TIDAK ADA TAG <form> DI SINI -->
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <!-- Tombol ini akan memicu submit form utama -->
+        <button type="button" class="btn btn-primary" id="confirm-finalize-btn">Ya, Finalisasi Sekarang</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function calculateVariance(row) {
+        // ... (Fungsi ini sudah benar, tidak perlu diubah)
+        const systemStockEl = row.querySelector('[data-system-stock]');
+        const physicalCountInput = row.querySelector('.physical-count-input');
+        const varianceCell = row.querySelector('.variance-cell');
+        
+        // Pastikan semua elemen ditemukan sebelum melanjutkan
+        if (!systemStockEl || !physicalCountInput || !varianceCell) return;
+        
+        const systemStock = parseInt(systemStockEl.dataset.systemStock, 10);
+        // Jika input kosong, anggap 0 untuk kalkulasi
+        const physicalCount = parseInt(physicalCountInput.value, 10) || 0;
+        
+        if (!isNaN(systemStock)) {
+            let variance = physicalCount - systemStock;
+            // Jika input kosong, jangan tampilkan selisih
+            if (physicalCountInput.value === '') {
+                 varianceCell.textContent = '-';
+                 variance = 0; // reset variance untuk class
+            } else {
+                 varianceCell.textContent = variance;
+            }
+            
+            varianceCell.classList.remove('text-success', 'text-danger', 'text-muted');
+            if (variance > 0) {
+                varianceCell.classList.add('text-success');
+                varianceCell.textContent = '+' + variance;
+            } else if (variance < 0) {
+                varianceCell.classList.add('text-danger');
+            } else {
+                 varianceCell.classList.add('text-muted');
+                 if(physicalCountInput.value !== '') varianceCell.textContent = '0';
+            }
+        } else {
+            varianceCell.textContent = '-';
+        }
+    }
+
+    const form = document.getElementById('stock-opname-form');
+    // Gunakan event delegation untuk performa yang lebih baik
+    form.addEventListener('input', function(event) {
+        if (event.target.classList.contains('physical-count-input')) {
+            calculateVariance(event.target.closest('tr'));
+        }
+    });
+
+    // Jalankan kalkulasi untuk semua baris saat halaman dimuat
+    document.querySelectorAll('.physical-count-input').forEach(input => {
+        calculateVariance(input.closest('tr'));
+    });
+
+    // === Logika Modal yang Disederhanakan ===
+    const confirmFinalizeBtn = document.getElementById('confirm-finalize-btn');
+    const hiddenSubmitBtn = document.getElementById('submit-finalize-hidden');
+    
+    if (confirmFinalizeBtn && hiddenSubmitBtn) {
+        confirmFinalizeBtn.addEventListener('click', function() {
+            // Secara programatik klik tombol submit finalisasi yang tersembunyi
+            // Ini akan mensubmit form utama dengan data terbaru dan nama tombol yang benar
+            hiddenSubmitBtn.click();
+        });
+    }
+    
+    // Hapus skrip sinkronisasi modal karena tidak lagi diperlukan
+    // const finalizeModal = document.getElementById('finalizeModal');
+    // finalizeModal.addEventListener('show.bs.modal', ...); // <-- HAPUS BLOK INI
+});
+</script>
+{% endblock %}
