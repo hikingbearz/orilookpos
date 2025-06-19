@@ -1,0 +1,15 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-WTF
+Werkzeug
+SQLAlchemy
+gunicorn
+pandas
+openpyxl
+pytz
+Babel
+click
+itsdangerous
+Jinja2
+MarkupSafe
